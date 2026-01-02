@@ -8,18 +8,10 @@ use Illuminate\Support\Facades\Http;
 
 class ApiService implements ApiServiceInterface
 {
+    public function getApi($url) {
+        $response =  Http::get($url);
 
-    public function getData()
-    {
-        $url = Api::where('name','pokemon');
-        $response = Http::get($url);
-        return json_decode($response);
-    }
-
-    public function getDataById($id)
-    {
-        $url = Api::where('name','pokemon');
-        $response = Http::get($url);
-        return json_decode($response);
+//        return json_decode($response);
+        return $response->json();
     }
 }

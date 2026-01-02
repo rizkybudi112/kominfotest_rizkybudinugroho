@@ -4,6 +4,5 @@ namespace App\Services\Contract;
 
 interface ApiServiceInterface
 {
-public function getData();
-public function getDataById($id);
+    public function getApi($url);
 }

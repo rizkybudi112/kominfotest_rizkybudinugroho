@@ -3,34 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Services\Contract\ApiServiceInterface;
+use App\Services\Contract\FetchDataServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 
 class Pokemon extends Controller
 {
-    protected ApiServiceInterface $apiService;
-//
-    public function _construct(
-        ApiServiceInterface $apiService
-
-    )
+    public function index(Request $request)
     {
-        $this->apiService = $apiService;
+        $query = \App\Models\pokemon::with('abilities')
+            ->orderByDesc('weight');
 
+        // FILTER DROPDOWN
+        match ($request->weight) {
+            'light' => $query->whereBetween('weight', [100,150]),
+            'medium' => $query->whereBetween('weight', [151,199]),
+            'heavy' => $query->where('weight', '>=', 200),
+            default => null
+        };
+
+        $pokemons = $query->get();
+
+        return view('pokemon', compact('pokemons'));
     }
 
-    public function getData()
+    public function sync()
     {
-        $service = app(ApiServiceInterface::class);
-        return $service->getDataById('1');
-    }
-
-    public function getDataById($id){
-        $url = env('APIURL').$id;
-        $response = Http::get($url);
-        return json_decode($response);
-
+        $fetch = app(FetchDataServiceInterface::class)->fetch();
     }
 
 

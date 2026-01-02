@@ -29,7 +29,7 @@ return new class extends Migration
         });
         Schema::create('pokemon_abilities', function (Blueprint $table) {
             $table->integer('pokemon_id');
-            $table->integer('ablities_id');
+            $table->integer('ability_id');
             $table->timestamps();
         });
 
