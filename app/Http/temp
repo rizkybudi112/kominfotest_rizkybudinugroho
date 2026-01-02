@@ -1,0 +1,90 @@
+RIZKY BN, [02/01/26 11.39]
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Pokemon;
+use App\Models\Ability;
+
+class FetchPokemon extends Command
+{
+    protected $signature = 'pokemon:fetch';
+    protected $description = 'Fetch Pokemon from PokeAPI';
+
+    public function handle()
+    {
+        for ($id = 1; $id <= 400; $id++) {
+
+            $response = Http::get("https://pokeapi.co/api/v2/pokemon/{$id}");
+            if (!$response->successful()) continue;
+
+            $data = $response->json();
+
+            // FILTER WEIGHT
+            if ($data['weight'] < 100) continue;
+
+            // DOWNLOAD IMAGE
+            $imageUrl = $data['sprites']['other']['official-artwork']['front_default'];
+            if (!$imageUrl) continue;
+
+            $image = Http::get($imageUrl);
+            $path = "pokemons/{$data['name']}.png";
+
+            // overwrite jika ada
+            Storage::disk('public')->put($path, $image->body());
+
+            // SIMPAN POKEMON
+            $pokemon = Pokemon::updateOrCreate(
+                ['name' => $data['name']],
+                [
+                    'base_experience' => $data['base_experience'],
+                    'weight' => $data['weight'],
+                    'image_path' => $path
+                ]
+            );
+
+            // SIMPAN ABILITIES (is_hidden = false)
+            foreach ($data['abilities'] as $item) {
+                if ($item['is_hidden']) continue;
+
+                $ability = Ability::firstOrCreate([
+                    'name' => $item['ability']['name']
+                ]);
+
+                $pokemon->abilities()->syncWithoutDetaching($ability->id);
+            }
+
+            $this->info("Saved: {$data['name']}");
+        }
+    }
+}
+
+RIZKY BN, [02/01/26 11.40]
+class Pokemon extends Model
+{
+    protected $fillable = [
+        'name',
+        'base_experience',
+        'weight',
+        'image_path'
+    ];
+
+    public function abilities()
+    {
+        return $this->belongsToMany(Ability::class);
+    }
+}
+
+RIZKY BN, [02/01/26 11.40]
+class Ability extends Model
+{
+    protected $fillable = ['name'];
+
+    public function pokemons()
+    {
+        return $this->belongsToMany(Pokemon::class);
+    }
+}
+
+RIZKY BN, [02/01/26 11.40]
+php artisan storage:link
+php artisan pokemon:fetch
